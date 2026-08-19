@@ -11,8 +11,7 @@ SELECT job_id,
         name AS company_name
 FROM job_postings_fact as jpf
 LEFT JOIN company_dim as cd ON jpf.company_id = cd.company_id
-WHERE job_work_from_home IS TRUE
-        AND salary_year_avg IS NOT NULL
+WHERE salary_year_avg IS NOT NULL
         AND job_title_short = 'Data Analyst'
 ORDER BY salary_year_avg DESC
 LIMIT 10

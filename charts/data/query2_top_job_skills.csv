@@ -1,0 +1,35 @@
+job_id,job_title,salary_year_avg,company_name,skill
+209315,Data base administrator,400000.0,ЛАНИТ,oracle
+209315,Data base administrator,400000.0,ЛАНИТ,kafka
+209315,Data base administrator,400000.0,ЛАНИТ,linux
+209315,Data base administrator,400000.0,ЛАНИТ,git
+209315,Data base administrator,400000.0,ЛАНИТ,svn
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,sql
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,python
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,r
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,sas
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,matlab
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,spark
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,airflow
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,excel
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,tableau
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,power bi
+229253,Director of Safety Data Analysis,375000.0,Torc Robotics,sas
+641501,Head of Infrastructure Management & Data Analytics - Financial...,375000.0,"Citigroup, Inc",excel
+641501,Head of Infrastructure Management & Data Analytics - Financial...,375000.0,"Citigroup, Inc",word
+1110602,"HC Data Analyst , Senior",375000.0,Illuminate Mission Solutions,python
+1110602,"HC Data Analyst , Senior",375000.0,Illuminate Mission Solutions,r
+1110602,"HC Data Analyst , Senior",375000.0,Illuminate Mission Solutions,vba
+1110602,"HC Data Analyst , Senior",375000.0,Illuminate Mission Solutions,excel
+1110602,"HC Data Analyst , Senior",375000.0,Illuminate Mission Solutions,tableau
+101757,Head of Data Analytics,350000.0,Care.com,sql
+101757,Head of Data Analytics,350000.0,Care.com,python
+101757,Head of Data Analytics,350000.0,Care.com,r
+101757,Head of Data Analytics,350000.0,Care.com,bigquery
+101757,Head of Data Analytics,350000.0,Care.com,snowflake
+101757,Head of Data Analytics,350000.0,Care.com,tableau
+101757,Head of Data Analytics,350000.0,Care.com,power bi
+101757,Head of Data Analytics,350000.0,Care.com,looker
+1059665,Data Analyst,350000.0,Anthropic,sql
+1059665,Data Analyst,350000.0,Anthropic,python
+894135,Research Scientist,285000.0,OpenAI,github
