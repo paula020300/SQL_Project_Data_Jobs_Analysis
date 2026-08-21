@@ -14,7 +14,8 @@ INNER JOIN job_postings_fact AS jpf ON jpf.job_id = sjd.job_id
 WHERE jpf.job_title_short = 'Data Analyst'
         AND jpf.salary_year_avg IS NOT NULL
 GROUP BY sd.skills
-HAVING COUNT(jpf.job_id) >=30
+HAVING COUNT(jpf.job_id) >= 100
+        AND AVG(jpf.salary_year_avg) >= 100000
 ORDER BY avg_salary_per_skill DESC, demand_count DESC;
 
 SELECT sd.skills,
@@ -26,5 +27,6 @@ INNER JOIN job_postings_fact AS jpf ON jpf.job_id = sjd.job_id
 WHERE jpf.job_title_short = 'Data Analyst'
         AND jpf.salary_year_avg IS NOT NULL
 GROUP BY sd.skills
-HAVING COUNT(jpf.job_id) >=30
+HAVING COUNT(jpf.job_id) >= 100
+        AND AVG(jpf.salary_year_avg) >= 100000
 ORDER BY demand_count DESC, avg_salary_per_skill DESC

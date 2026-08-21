@@ -7,6 +7,9 @@ Run from the repository root:
 
 Each CSV in charts/data/ is the result of the matching file in project_sql/,
 exported from PostgreSQL. Every chart is written to assets/ as a PNG.
+
+All figures share one width so they render at the same size in the README, and
+the type is sized to match the body text of the page at GitHub's content width.
 """
 
 from pathlib import Path
@@ -22,146 +25,183 @@ DATA = ROOT / "charts" / "data"
 ASSETS = ROOT / "assets"
 ASSETS.mkdir(exist_ok=True)
 
-# Seaborn's whitegrid theme, shipped with matplotlib so it needs no extra
-# dependency. It supplies the light background and recessive gridlines; the
-# overrides below only set the colours and type.
+# Every figure is this wide, and is saved without a tight bounding box, so all
+# four PNGs come out at exactly the same pixel width and GitHub scales them
+# identically. Only the height varies.
+FIG_W = 9.0
+DPI = 200
+FS_BODY = 12.5
+FS_TITLE = 16
+FS_SUB = 12
+FS_LABEL = 11.5
+
+# Seaborn's whitegrid theme supplies the base; the overrides set colour and type.
 plt.style.use("seaborn-v0_8-whitegrid")
 
 SURFACE = "#ffffff"
-INK = "#0b0b0b"
-INK_MUTED = "#52514e"
+INK = "#111111"
+INK_MUTED = "#4a4a48"
 SERIES = "#2a78d6"
+TRACK = "#f0efec"
+STEM = "#dedcd7"
 
 plt.rcParams.update({
     "figure.facecolor": SURFACE,
     "axes.facecolor": SURFACE,
     "savefig.facecolor": SURFACE,
     "font.family": "DejaVu Sans",
-    "font.size": 10,
+    "font.size": FS_BODY,
     "text.color": INK,
     "axes.labelcolor": INK_MUTED,
+    "axes.labelsize": FS_LABEL,
     "xtick.color": INK_MUTED,
     "ytick.color": INK_MUTED,
-    "grid.linewidth": 0.8,
+    "xtick.labelsize": FS_LABEL,
+    "ytick.labelsize": FS_LABEL,
+    "grid.color": "#eceae5",
+    "grid.linewidth": 1.0,
 })
 
 
-def titled(ax, title, subtitle):
-    ax.set_title(title, loc="left", fontsize=13, fontweight="bold",
-                 color=INK, pad=22)
-    ax.text(0, 1.02, subtitle, transform=ax.transAxes, fontsize=9.5,
-            color=INK_MUTED, va="bottom")
+def new_figure(height):
+    """A figure of the shared width, with room reserved for the title block."""
+    fig, ax = plt.subplots(figsize=(FIG_W, height), layout="constrained")
+    # Reserve space in inches, converted to figure fractions, so the title block
+    # and footnote occupy the same absolute space on every chart.
+    fig.get_layout_engine().set(
+        rect=(0.012, 0.25 / height, 0.976, 1 - (1.05 + 0.25) / height)
+    )
+    for side in ("top", "right", "left", "bottom"):
+        ax.spines[side].set_visible(False)
+    ax.tick_params(length=0)
+    return fig, ax
+
+
+def titled(fig, height, title, subtitle):
+    """Title block above the plot."""
+    fig.text(0.012, 1 - 0.30 / height, title, fontsize=FS_TITLE,
+             fontweight="bold", color=INK, va="top")
+    fig.text(0.012, 1 - 0.66 / height, subtitle, fontsize=FS_SUB,
+             color=INK_MUTED, va="top")
 
 
 def save(fig, name):
     path = ASSETS / name
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    fig.savefig(path, dpi=DPI)
     plt.close(fig)
     print(f"wrote {path.relative_to(ROOT)}")
 
 
 def chart_1_top_paying_jobs():
-    df = pd.read_csv(DATA / "query1_top_paying_jobs.csv")
-    df = df.sort_values("salary_year_avg")
+    df = pd.read_csv(DATA / "query1_top_paying_jobs.csv").sort_values("salary_year_avg")
+    height = 7.4
 
     labels = [
-        f"{t[:38] + '...' if len(t) > 38 else t}\n{c}"
-        for t, c in zip(df["job_title"], df["company_name"])
+        f"{title[:34] + '...' if len(title) > 34 else title}\n{company}"
+        for title, company in zip(df["job_title"], df["company_name"])
     ]
+    top = df["salary_year_avg"].max()
 
-    fig, ax = plt.subplots(figsize=(9, 6))
-    ax.barh(labels, df["salary_year_avg"], color=SERIES, height=0.62, zorder=3)
-    for y, v in enumerate(df["salary_year_avg"]):
-        ax.text(v + 8000, y, f"${v/1000:,.0f}k", va="center",
-                fontsize=9, color=INK_MUTED)
+    fig, ax = new_figure(height)
+    rows = range(len(df))
+    # A faint full-width track behind each bar carries the scale.
+    ax.barh(rows, top * 1.16, color=TRACK, height=0.66, zorder=1)
+    ax.barh(rows, df["salary_year_avg"], color=SERIES, height=0.66, zorder=3)
+    ax.set_yticks(list(rows), labels)
 
-    ax.set_xlim(0, df["salary_year_avg"].max() * 1.14)
-    ax.grid(axis="y", visible=False)
+    for row, salary in enumerate(df["salary_year_avg"]):
+        ax.text(salary + top * 0.015, row, f"${salary/1000:,.0f}k", va="center",
+                fontsize=FS_LABEL, color=INK_MUTED)
+
+    ax.set_xlim(0, top * 1.16)
+    ax.set_ylim(-0.7, len(df) - 0.3)
     ax.set_xticks([])
-    ax.tick_params(axis="y", labelsize=9)
-    titled(ax, "Top 10 highest-paying Data Analyst postings",
+    ax.grid(visible=False)
+    titled(fig, height, "Top 10 highest-paying Data Analyst postings",
            "Average yearly salary, postings with a disclosed salary")
     save(fig, "01_top_paying_jobs.png")
 
 
 def chart_3_top_demanded_skills():
     df = pd.read_csv(DATA / "query3_top_demanded_skills.csv").sort_values("job_count")
+    height = 4.8
 
-    fig, ax = plt.subplots(figsize=(8, 3.6))
-    ax.barh(df["skills"], df["job_count"], color=SERIES, height=0.6, zorder=3)
-    for y, v in enumerate(df["job_count"]):
-        ax.text(v + 1200, y, f"{v:,}", va="center", fontsize=9, color=INK_MUTED)
+    top = df["job_count"].max()
 
-    ax.set_xlim(0, df["job_count"].max() * 1.14)
-    ax.grid(axis="y", visible=False)
+    fig, ax = new_figure(height)
+    rows = range(len(df))
+    ax.barh(rows, top * 1.18, color=TRACK, height=0.62, zorder=1)
+    ax.barh(rows, df["job_count"], color=SERIES, height=0.62, zorder=3)
+    ax.set_yticks(list(rows), df["skills"])
+
+    for row, postings in enumerate(df["job_count"]):
+        ax.text(postings + top * 0.018, row, f"{postings:,}", va="center",
+                fontsize=FS_LABEL, color=INK_MUTED)
+
+    ax.set_xlim(0, top * 1.18)
+    ax.set_ylim(-0.7, len(df) - 0.3)
     ax.set_xticks([])
-    titled(ax, "Top 5 most in-demand Data Analyst skills",
+    ax.grid(visible=False)
+    titled(fig, height, "Top 5 most in-demand Data Analyst skills",
            "Postings requiring each skill, all Data Analyst postings")
     save(fig, "03_top_demanded_skills.png")
 
 
 def chart_4_top_paying_skills():
     df = pd.read_csv(DATA / "query4_top_paying_skills.csv").sort_values("avg_salary")
+    height = 10.4
+    top = df["avg_salary"].max()
 
-    fig, ax = plt.subplots(figsize=(8.5, 8))
-    y = range(len(df))
-    ax.hlines(y, 104_000, df["avg_salary"], color="#d6d5d0", linewidth=1.4, zorder=2)
-    ax.scatter(df["avg_salary"], y, s=64, color=SERIES, zorder=3)
-    ax.set_yticks(list(y), df["skills"])
+    fig, ax = new_figure(height)
+    rows = range(len(df))
+    ax.hlines(rows, 104_000, df["avg_salary"], color=STEM, linewidth=1.6, zorder=2)
+    ax.scatter(df["avg_salary"], rows, s=90, color=SERIES, zorder=3)
+    ax.set_yticks(list(rows), df["skills"])
 
-    for i, (v, n) in enumerate(zip(df["avg_salary"], df["postings_count"])):
-        ax.text(v + 700, i, f"${v/1000:,.1f}k  ({n})", va="center",
-                fontsize=8.5, color=INK_MUTED)
+    for row, (salary, postings) in enumerate(zip(df["avg_salary"],
+                                                 df["postings_count"])):
+        ax.text(salary + 800, row, f"${salary/1000:,.1f}k  ({postings})",
+                va="center", fontsize=FS_LABEL, color=INK_MUTED)
 
-    ax.set_xlim(104_000, df["avg_salary"].max() * 1.055)
+    ax.set_xlim(104_000, top * 1.07)
     ax.set_xticks([105_000, 110_000, 115_000, 120_000, 125_000, 130_000])
-    ax.xaxis.set_major_formatter(lambda v, _: f"${v/1000:,.0f}k")
+    ax.xaxis.set_major_formatter(lambda salary, _: f"${salary/1000:,.0f}k")
     ax.set_ylim(-0.8, len(df) - 0.2)
     ax.grid(axis="y", visible=False)
-    titled(ax, "Top 25 highest-paying Data Analyst skills",
-           "Average yearly salary; posting count in brackets; skills with 25+ postings")
+    titled(fig, height, "Top 25 highest-paying Data Analyst skills",
+           "Average yearly salary; posting count in brackets")
     save(fig, "04_top_paying_skills.png")
 
 
 def chart_5_optimal_skills():
     df = pd.read_csv(DATA / "query5_optimal_skills.csv")
-    top_demand = df.nlargest(10, "demand_count").sort_values("demand_count")
-    top_pay = df.nlargest(10, "avg_salary").sort_values("avg_salary")
+    height = 7.2
 
-    fig, (ax_d, ax_p) = plt.subplots(2, 1, figsize=(8.5, 9))
+    fig, ax = new_figure(height)
+    ax.scatter(df["demand_count"], df["avg_salary"], s=95, color=SERIES,
+               edgecolor=SURFACE, linewidth=1.4, zorder=3)
 
-    y = range(10)
-    ax_d.hlines(y, 0, top_demand["demand_count"], color="#d6d5d0",
-                linewidth=1.4, zorder=2)
-    ax_d.scatter(top_demand["demand_count"], y, s=64, color=SERIES, zorder=3)
-    ax_d.set_yticks(list(y), top_demand["skills"])
-    for i, (v, s) in enumerate(zip(top_demand["demand_count"],
-                                   top_demand["avg_salary"])):
-        ax_d.text(v + 110, i, f"{v:,}  (${s/1000:,.0f}k)", va="center",
-                  fontsize=8.5, color=INK_MUTED)
-    ax_d.set_xlim(0, top_demand["demand_count"].max() * 1.30)
-    ax_d.set_xticks([])
-    ax_d.grid(axis="y", visible=False)
-    titled(ax_d, "Most in demand",
-           "Postings requiring the skill; average salary in brackets; skills with 30+ postings")
+    # Hand-placed offsets where neighbouring points would collide.
+    offsets = {"azure": (-16, -19), "oracle": (-19, -19), "qlik": (-14, -19),
+               "hadoop": (-56, -4), "databricks": (13, 11), "python": (-48, 12),
+               "looker": (-62, -4),
+               "snowflake": (11, 6)}
+    for skill, postings, salary in zip(df["skills"], df["demand_count"],
+                                       df["avg_salary"]):
+        ax.annotate(skill, (postings, salary), textcoords="offset points",
+                    xytext=offsets.get(skill, (11, 5)),
+                    fontsize=FS_LABEL, color=INK_MUTED)
 
-    ax_p.hlines(y, 111_000, top_pay["avg_salary"], color="#d6d5d0",
-                linewidth=1.4, zorder=2)
-    ax_p.scatter(top_pay["avg_salary"], y, s=64, color=SERIES, zorder=3)
-    ax_p.set_yticks(list(y), top_pay["skills"])
-    for i, (v, n) in enumerate(zip(top_pay["avg_salary"],
-                                   top_pay["demand_count"])):
-        ax_p.text(v + 900, i, f"${v/1000:,.1f}k  ({n:,})", va="center",
-                  fontsize=8.5, color=INK_MUTED)
-    ax_p.set_xlim(111_000, top_pay["avg_salary"].max() * 1.06)
-    ax_p.set_xticks([])
-    ax_p.grid(axis="y", visible=False)
-    titled(ax_p, "Best paid",
-           "Average yearly salary; posting count in brackets; skills with 30+ postings")
-
-    ax_d.set_ylim(-0.7, 9.6)
-    ax_p.set_ylim(-0.7, 9.6)
-    fig.subplots_adjust(hspace=0.34)
+    ax.set_xscale("log")
+    ax.set_xlim(85, 2700)
+    ax.set_ylim(98_500, 115_800)
+    ax.set_xticks([100, 200, 500, 1000, 2000])
+    ax.xaxis.set_major_formatter(lambda postings, _: f"{postings:,.0f}")
+    ax.yaxis.set_major_formatter(lambda salary, _: f"${salary/1000:,.0f}k")
+    ax.set_xlabel("Postings requiring the skill (log scale)")
+    ax.set_ylabel("Average yearly salary")
+    titled(fig, height, "Skills that are both in demand and well paid",
+           "Skills with 100+ postings and a $100,000+ average")
     save(fig, "05_optimal_skills.png")
 
 
